@@ -117,17 +117,31 @@ class BackgroundLocationService: MethodChannel.MethodCallHandler, PluginRegistry
     }
 
     private fun isLocationServiceRunning(): Boolean {
-        val manager: ActivityManager = context!!.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (LocationUpdatesService::class.java.getName() == service.service.getClassName()) {
-                if (service.foreground)
-                    return true
-                else
-                    return false
+        val ctx = context ?: return false
+
+        return try {
+            val manager: ActivityManager = ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            manager.getRunningServices(Integer.MAX_VALUE).any { service ->
+                LocationUpdatesService::class.java.name == service.service.className && service.foreground
             }
+        } catch (e: Exception) {
+            Log.e(BackgroundLocationPlugin.TAG, "Error checking if service is running: ${e.message}")
+            false
         }
-        return false
     }
+
+//    private fun isLocationServiceRunning(): Boolean {
+//        val manager: ActivityManager = context!!.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+//        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+//            if (LocationUpdatesService::class.java.getName() == service.service.getClassName()) {
+//                if (service.foreground)
+//                    return true
+//                else
+//                    return false
+//            }
+//        }
+//        return false
+//    }
 
     private fun stopLocationService(): Int {
         service?.removeLocationUpdates()
